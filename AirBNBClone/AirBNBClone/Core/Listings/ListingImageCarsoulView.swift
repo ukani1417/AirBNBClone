@@ -9,10 +9,11 @@ import SwiftUI
 
 struct ListingImageCarsoulView: View {
     
-    private var images: [String] = (1...10).map { index in
-        return "\(index)"
-    }
+    let images: [String]
     
+    init(_ images: [String]) {
+        self.images = images
+    }
         
     var body: some View {
         TabView {
@@ -26,6 +27,3 @@ struct ListingImageCarsoulView: View {
     }
 }
 
-#Preview {
-    ListingImageCarsoulView()
-}

@@ -10,14 +10,15 @@ import SwiftUI
 struct ListItemView: View {
     
     @State private var heartTapped: Bool = false
+    let list: Listing
     
-    private var images: [String] = (1...10).map { index in
-        return "\(index)"
+    init(_ list: Listing) {
+        self.list = list
     }
     
     var body: some View {
         VStack(spacing: 10) {
-            ListingImageCarsoulView()
+            ListingImageCarsoulView(list.imageURLs)
                 .frame(height: 300)
                 .clipShape(RoundedRectangle(cornerRadius: 10.0))
             detailView
@@ -40,18 +41,18 @@ struct ListItemView: View {
             // Details
             
             VStack(alignment: .leading) {
-                Text("Delhi , India")
+                Text("\(list.city) , \(list.state)")
                     .bold()
                     .foregroundStyle(.black)
                 
                 Group {
-                    Text("sector 12")
+                    Text(list.address)
                     Text("Nov 3 - 10")
                 }
                 .foregroundStyle(.gray)
                 
                 HStack(spacing: 5) {
-                    Text("$567")
+                    Text("$\(list.pricePerNight)")
                     Text("night")
                 }
                 .fontWeight(.semibold)
@@ -65,7 +66,7 @@ struct ListItemView: View {
             // Ratings
             HStack {
                 Image(systemName: "star.fill")
-                Text("4.86")
+                Text("\(list.rating)")
             }
             .font(.footnote)
             .bold()
@@ -76,6 +77,3 @@ struct ListItemView: View {
 
 }
 
-#Preview {
-    ListItemView()
-}

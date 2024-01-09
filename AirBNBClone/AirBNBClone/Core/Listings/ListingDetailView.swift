@@ -10,43 +10,31 @@ import MapKit
 
 struct ListingDetailView: View {
     
-    private var images: [String] = (1...10).map { index in
-        return "\(index)"
-    }
     
-    private var featureLists: [featureItem] = [
-        featureItem(id: 0,
-                    icon: "door.left.hand.open",
-                    title: "Self-Check in",
-                    des: "check your self in with keypad"),
-        featureItem(id: 1,
-                    icon: "medal",
-                    title: "SuperHost",
-                    des: "Superhost are experinced, hightly rated hosts are who are commited to grate experice"),
-
-    ]
     
-    private var bedRooms: [bedRoom] = [
-        bedRoom(id: 1, icon: "bed.double", type: "BedRoom 1"),
-        bedRoom(id: 2, icon: "bed.double", type: "BedRoom 2"),
-        bedRoom(id: 3, icon: "bed.double", type: "BedRoom 3")
-    ]
-    
-    private var placeOffers: [placeOffer] = [
-        placeOffer(id: 1, icon: "wifi", des: "Wifi"),
-        placeOffer(id: 2, icon: "shield.checkered", des: "Alert System"),
-        placeOffer(id: 3, icon: "square.and.arrow.up", des: "Balcony"),
-        placeOffer(id: 4, icon: "washer", des: "Laundry"),
-        placeOffer(id: 5, icon: "appletv", des: "TV"),
-        
-    ]
-    
+    let listing: Listing
+    @State private var  cameraPosition: MapCameraPosition
     @Environment(\.dismiss) var dismiss
+    
+    init(_ listing: Listing) {
+        self.listing = listing
+        
+        let region = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: listing.latitude, longitude: listing.longitude), span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1))
+        self._cameraPosition = State(initialValue: .region(region))
+    }
     
     var body: some View {
         ScrollView(showsIndicators: false) {
-            ListingImageCarsoulView()
-                .frame(height: 300)
+            
+            ZStack(alignment: .topLeading) {
+                ListingImageCarsoulView(listing.imageURLs)
+                    .frame(height: 320)
+                
+                backButton
+                   
+            }
+            
+            
             
             VStack(alignment: .leading, content: {
                 
@@ -75,12 +63,11 @@ struct ListingDetailView: View {
             })
         
         }
+        .toolbar(.hidden, for: .tabBar)
         .padding(.bottom, 85)
-        .overlay(alignment: .topLeading, content: {
-            backButton
-        })
         .overlay(alignment: .bottom, content: {
-            bookView
+                bookView
+                .background(Color.gray.ignoresSafeArea())
         })
         .ignoresSafeArea()
     }
@@ -89,27 +76,23 @@ struct ListingDetailView: View {
         Button(action: {
             dismiss()
         }, label: {
-            Image(systemName: "lessthan.circle.fill")
-                .resizable()
-                .scaledToFill()
-                .frame(width: 30, height: 30, alignment: .center)
-                .imageScale(.large)
-                .padding(.top, 30)
-                .padding(.leading, 20)
-                .foregroundStyle(Color.white)
+            Image(systemName: "chevron.left")
+                .foregroundColor(.black)
+                .background(Circle().fill(.white).frame(width: 32, height: 32))
+                .padding(32)
         })
     }
     
     var villaDetailView: some View {
         Group {
-            Text("Miami Villa")
+            Text(listing.title)
                 .font(.title)
                 .fontWeight(.semibold)
             
             HStack {
                 Image(systemName: "star.fill")
                 
-                Text("4.86")
+                Text("\(listing.rating)")
                 Text(" - ")
             
                 Text("28 Reviews")
@@ -118,7 +101,7 @@ struct ListingDetailView: View {
             }
             .font(.caption)
             
-            Text("Miami ,Florida")
+            Text("\(listing.city) ,\(listing.state)")
                 .font(.caption)
         }
         .padding(.leading)
@@ -127,14 +110,14 @@ struct ListingDetailView: View {
     var hostView: some View {
         HStack {
             VStack(alignment: .leading) {
-                Text("Entire villa hosted by John Smith")
+                Text("Entire \(listing.type.description) hosted by \(listing.ownerName)")
                     .font(.headline)
                 
                 HStack(spacing: 2) {
-                    Text("4 guests - ")
-                    Text("4 bedrooms - ")
-                    Text("4 beds - ")
-                    Text("3 baths")
+                    Text("\(listing.numberOfGuests) guests - ")
+                    Text("\(listing.numberOfBedrooms) bedrooms - ")
+                    Text("\(listing.numberOfBeds) beds - ")
+                    Text("\(listing.numberOfBathrooms) baths")
                 }
                 .font(.caption)
                 
@@ -143,7 +126,7 @@ struct ListingDetailView: View {
             
             Spacer()
             
-            Image("userImage")
+            Image(listing.ownerImageURL)
                 .resizable()
                 .scaledToFill()
                 .frame( width: 64, height: 64, alignment: .center)
@@ -153,14 +136,14 @@ struct ListingDetailView: View {
     }
     
     var featureListView: some View {
-        VStack(alignment: .leading) {
-            ForEach(featureLists, id:\.id) { item in
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(listing.feature) { item in
                 HStack {
                     Image(systemName: item.icon)
                     VStack(alignment: .leading) {
                         Text(item.title)
                             .font(.footnote)
-                        Text(item.des)
+                        Text(item.subTitle)
                             .font(.caption)
                             .foregroundStyle(Color.gray)
                     }
@@ -177,10 +160,10 @@ struct ListingDetailView: View {
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack {
-                    ForEach(bedRooms, id:\.self) { bed in
+                    ForEach(1...listing.numberOfBedrooms, id:\.self) { bed in
                         VStack(alignment: .leading) {
-                            Image(systemName: bed.icon)
-                            Text(bed.type)
+                            Image(systemName: "bed.double")
+                            Text("bedroom \(bed)")
                         }
                         .frame(width: 132, height: 100)
                         .padding(.trailing, 30)
@@ -201,12 +184,12 @@ struct ListingDetailView: View {
             Text("What this place offers")
                 .font(.headline)
             
-            ForEach(placeOffers, id: \.self) { offer in
+            ForEach(listing.ameneties) { offer in
                 HStack(spacing: 20) {
                     Image(systemName: offer.icon)
                         .frame(width: 32)
                     
-                    Text(offer.des)
+                    Text(offer.title)
                         .font(.footnote)
                     
                 }
@@ -220,7 +203,7 @@ struct ListingDetailView: View {
             Text("where you will be")
                 .font(.headline)
             
-            Map()
+            Map(position: $cameraPosition)
                 .frame(height: 200)
                 .clipShape(RoundedRectangle(cornerRadius: 5))
         }
@@ -230,7 +213,7 @@ struct ListingDetailView: View {
     var bookView: some View {
         HStack {
             VStack(alignment: .leading) {
-                Text("$ 500")
+                Text("$ \(listing.pricePerNight)")
                     .font(.subheadline)
                     .fontWeight(.semibold)
                 
@@ -247,23 +230,14 @@ struct ListingDetailView: View {
             
             Spacer()
             
-            Button(action: {
-                
-            }, label: {
-                Text("Reserve")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .frame(width: 140, height: 40)
-                    .foregroundStyle(Color.white)
-                    .background(Color.pink.clipShape(RoundedRectangle(cornerRadius: 8)))
-                    .padding(.trailing, 30)
-            })
+            ARButton(140, 40, "Reserve", {})
+                .padding(.trailing, 30)
             
             
         }
         .padding()
-        .background(Color(uiColor: .quaternaryLabel))
         
+    
     }
     
     
@@ -273,6 +247,3 @@ struct ListingDetailView: View {
     
 }
 
-#Preview {
-    ListingDetailView()
-}

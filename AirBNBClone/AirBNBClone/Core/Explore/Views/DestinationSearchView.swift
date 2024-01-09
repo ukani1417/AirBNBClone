@@ -16,24 +16,23 @@ enum DestinationSearchConteType {
 struct DestinationSearchView: View {
     
     @Binding var showView: Bool
-    @State var searchedDestination: String
-   
+    @Binding var numberOfGuest: Int
+    
     @State var fromDate: Date = .now
     @State var toDate: Date = Date(timeInterval: TimeInterval(integerLiteral: 5), since: .now)
-    
-    @State var numbersOfAdult: Int = 0
-    
     @State var selectedContentType: DestinationSearchConteType = .search
+    
+    @ObservedObject var viewModel: ExploreViewModel
     
     var body: some View {
         VStack(spacing: 40) {
-    
+            
             searchTextView
             whenView
             whoView
             
             Spacer()
-           
+            
         }
         .padding(.top, 50)
         .overlay(alignment: .topLeading) {
@@ -43,6 +42,11 @@ struct DestinationSearchView: View {
     
     var closeButton: some View {
         Button(action: {
+            
+            if viewModel.searchLocation.isEmpty {
+                viewModel.searchPlace()
+            }
+            
             withAnimation {
                 showView.toggle()
             }
@@ -50,7 +54,7 @@ struct DestinationSearchView: View {
             Image(systemName: "xmark.circle")
                 .imageScale(.large)
                 .foregroundColor(Color.primary)
-                
+            
         })
     }
     
@@ -60,7 +64,7 @@ struct DestinationSearchView: View {
                 bodyView(title: "Where to?",
                          contentView: searchView)
             } else {
-                closeView(title: "Where", subTitle: "Add Destinations")
+                closeView(title: "Where", subTitle: viewModel.searchLocation.isEmpty == true  ? "Add Destinations" : viewModel.searchLocation)
             }
         }
         .modifier(searchViewModifire())
@@ -76,9 +80,15 @@ struct DestinationSearchView: View {
         HStack {
             Image(systemName: "magnifyingglass")
             
-            TextField("search destinations", text: $searchedDestination)
+            TextField("search destinations", text: $viewModel.searchLocation)
                 .font(.subheadline)
-                
+                .onSubmit {
+                    viewModel.searchPlace()
+                    withAnimation {
+                        showView.toggle()
+                    }
+                }
+            
         }
         .padding()
         .background(Color.gray.clipShape(RoundedRectangle(cornerRadius: 5).stroke(lineWidth: 1)))
@@ -87,10 +97,11 @@ struct DestinationSearchView: View {
     var datesView: some View {
         VStack {
             DatePicker("From", selection: $fromDate, displayedComponents: .date)
-            
+    
             Divider()
             
             DatePicker("To", selection: $toDate, in: fromDate..., displayedComponents: .date)
+                
         }
         .font(.subheadline)
         .fontWeight(.semibold)
@@ -99,12 +110,17 @@ struct DestinationSearchView: View {
     
     var guestCountView: some View {
         Stepper( onIncrement: {
-            numbersOfAdult += 1
+            numberOfGuest += 1
         },onDecrement: {
-                if numbersOfAdult > 0 { numbersOfAdult -= 1 }
-            }, label: {
-                Text("\(numbersOfAdult) Adults")
-            })
+            if numberOfGuest > 0 { numberOfGuest -= 1 }
+        }, label: {
+            Text("\(numberOfGuest) Adults")
+        })
+        .onSubmit {
+            withAnimation {
+                showView.toggle()
+            }
+        }
     }
     
     var whenView: some View {
@@ -122,7 +138,7 @@ struct DestinationSearchView: View {
             withAnimation {
                 selectedContentType = .dates
             }
-           
+            
         }
         
     }
@@ -133,7 +149,7 @@ struct DestinationSearchView: View {
                 bodyView(title: "Whos's Coming?", contentView: guestCountView)
             } else {
                 
-                closeView(title: "Who", subTitle: "Add Guests")
+                closeView(title: "Who", subTitle: numberOfGuest == 0 ? "Add Guests" : "\(numberOfGuest) Guests")
             }
         }
         .modifier(searchViewModifire())
@@ -186,17 +202,7 @@ struct DestinationSearchView: View {
                 
                 contentView
             }
-            
-            
         }
-        
-        
     }
-
-}
-
-
-
-#Preview {
-    DestinationSearchView(showView: .constant(true), searchedDestination: "india")
+    
 }
